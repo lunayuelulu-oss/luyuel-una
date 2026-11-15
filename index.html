@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Editorial Portfolio | 鲁月 Luna Lu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ================= 基础全局样式 ================= */
+        body {
+            font-family: 'Courier Prime', 'Courier New', Courier, 'Noto Sans SC', monospace;
+            background-color: #000000;
+            -webkit-font-smoothing: antialiased;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            cursor: none;
+            overflow-x: hidden;
+        }
+
+        * {
+            cursor: none !important;
+        }
+
+        .font-en { font-family: 'Courier Prime', 'Courier New', Courier, monospace !important; }
+        .font-zh { font-family: 'Courier Prime', 'Courier New', Courier, 'Noto Sans SC', monospace; }
+        .font-mono { font-family: 'Courier Prime', 'Courier New', Courier, 'Noto Sans SC', monospace !important; }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ================= 自定义光标 ================= */
+        .custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-radius: 100%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, backdrop-filter 0.3s ease;
+            z-index: 99999;
+        }
+        .custom-cursor.hovered {
+            width: 80px;
+            height: 80px;
+            background-color: transparent;
+            backdrop-filter: invert(1) blur(2px) contrast(1.2);
+            border-width: 1px;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .custom-cursor.dragging {
+            width: 16px;
+            height: 16px;
+            background-color: #ffffff;
+        }
+
+        /* ================= 首页横向作品画廊 ================= */
+        .gallery-item {
+            transition: opacity 0.5s ease, filter 0.5s ease;
+        }
+        .gallery-img {
+            transition: border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+            border: 3px solid transparent;
+        }
+        .gallery-img:hover {
+            transform: scale(1.03) translateY(-4px);
+        }
+        .gallery-img.selected {
+            border-color: #ffffff;
+            filter: invert(100%);
+        }
+
+        @media (hover: hover) {
+            #gallery-slider:hover .gallery-item:not(:hover) {
+                opacity: 0.4;
+                filter: brightness(0.8);
+            }
+        }
+
+        #gallery-slider.is-viewing .gallery-item:not(.active-item) {
+            opacity: 0.15;
+            filter: blur(4px) grayscale(100%);
+            pointer-events: none;
+        }
+
+        /* ================= 模态框通用动画 ================= */
+        .modal-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ================= 摄影海报网格 (Film) ================= */
+        .photo-grid-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.25rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .photo-item {
+            position: relative;
+            display: flex;
+        }
+        .photo-item img {
+            width: 100%;
+            object-fit: cover;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .photo-number {
+            position: absolute;
+            font-family: 'Courier Prime', 'Courier New', Courier, 'Noto Sans SC', monospace !important;
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #000000;
+            z-index: 10;
+        }
+        .photo-num-left { right: 100%; top: 0; padding-right: 0.5rem; }
+        .photo-num-right { left: 100%; top: 0; padding-left: 0.5rem; }
+        .photo-num-bottom-right { left: 100%; bottom: 0; padding-left: 0.5rem; }
+        .photo-num-bottom-left { right: 100%; bottom: 0; padding-right: 0.5rem; }
+
+        /* ================= 纸白色手风琴折页画册系统 ================= */
+        .accordion-viewport {
+            overflow: hidden;
+            perspective: 2200px;
+        }
+        .accordion-track {
+            display: flex;
+            align-items: stretch;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), height 0.5s ease;
+            will-change: transform;
+        }
+        .accordion-panel {
+            position: relative;
+            flex-shrink: 0;
+            background-color: #f8f8f6;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                        filter 0.7s ease;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+        }
+        /* 美术纸张微米纤维纹理 */
+        .magazine-paper-texture {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 20;
+            opacity: 0.32;
+            mix-blend-mode: multiply;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperNoise)' opacity='0.45'/%3E%3C/svg%3E");
+        }
+        /* 山谷折痕压线高光 */
+        .accordion-crease-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 2px;
+            z-index: 25;
+            pointer-events: none;
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.16), rgba(255, 255, 255, 0.75));
+        }
+        /* 折页动态光影渐变层 */
+        .accordion-fold-shade {
+            position: absolute;
+            inset: 0;
+            z-index: 22;
+            pointer-events: none;
+            transition: background 0.7s ease;
+        }
+
+        /* ================= 移动端响应式适配 ================= */
+        @media (max-width: 768px) {
+            * { cursor: auto !important; }
+            .custom-cursor { display: none !important; }
+
+            .photo-grid-container {
+                display: flex;
+                flex-direction: column;
+                gap: 3rem;
+            }
+            .photo-item {
+                width: 100%;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+            }
+            .photo-number {
+                top: -1.8rem !important;
+                left: 0 !important;
+                right: auto !important;
+                bottom: auto !important;
+                padding: 0 !important;
+                font-size: 1rem;
+            }
+
+            #modal-content-container {
+                padding: 1rem !important;
+                padding-top: 5rem !important;
+            }
+            .film-mobile-pad {
+                padding: 2rem 1rem 4rem 1rem !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-2 md:p-8 bg-black">
+
+    <!-- 自定义光标 -->
+    <div id="custom-cursor" class="custom-cursor"></div>
+
+    <!-- 主容器 -->
+    <div class="bg-black w-full max-w-[90rem] h-[100vh] md:h-[95vh] rounded-none md:rounded-sm flex flex-col relative overflow-hidden shadow-2xl mx-auto">
+        
+        <!-- 顶部个人信息（与下方 WORK EXPERIENCE 左端对齐） -->
+        <header class="w-full px-6 md:px-12 pt-6 md:pt-12 shrink-0 h-auto md:h-[120px] flex items-start">
+            <div class="w-full md:w-[1156px] mx-auto text-left text-white">
+                <h1 class="font-mono font-bold text-xl tracking-wide interactive-el">鲁月 Luna Lu</h1>
+                <p class="mt-1 font-mono text-gray-500 text-sm leading-relaxed tracking-wider interactive-el">luna.yuelulu@gmail.com</p>
+            </div>
+        </header>
+
+        <div class="flex-grow"></div>
+
+        <!-- 底部横向作品系列入口 -->
+        <div id="gallery-slider" class="flex items-end md:justify-center gap-4 md:gap-6 px-6 md:px-12 pb-10 md:pb-12 overflow-x-auto hide-scrollbar shrink-0 w-full mx-auto" style="-webkit-overflow-scrolling: touch;">
+            
+            <div class="gallery-item flex-none flex flex-col justify-end w-[160px] md:w-[220px] relative group">
+                <p class="font-mono text-xs font-semibold mb-2 text-white tracking-tight interactive-el">WORK EXPERIENCE</p>
+                <div class="relative w-full h-[240px] md:h-[350px]">
+                    <img src="https://i.postimg.cc/CK9wxq05/c22894a3ac42462a2f4550508f6d4865.png" alt="WORK EXPERIENCE" class="gallery-img w-full h-full object-cover interactive-el shadow-md" onclick="openDetail('proj-lelabo', this, event)">
+                </div>
+            </div>
+
+            <div class="gallery-item flex-none flex flex-col justify-end w-[130px] md:w-[160px] relative group">
+                <p class="font-mono text-xs font-semibold mb-2 text-white tracking-tight interactive-el">DESIGN</p>
+                <div class="relative w-full h-[190px] md:h-[250px]">
+                    <img src="https://i.postimg.cc/W37YfBXX/e598224fa6dd901cfb04135ead1c33d2.jpg" alt="DESIGN" class="gallery-img w-full h-full object-cover interactive-el shadow-md" onclick="openDetail('proj-louvre', this, event)">
+                </div>
+            </div>
+
+            <div class="gallery-item flex-none flex flex-col justify-end w-[170px] md:w-[220px] relative group">
+                <p class="font-mono text-xs font-semibold mb-2 text-white tracking-tight interactive-el">GWP</p>
+                <div class="relative w-full h-[280px] md:h-[400px]">
+                    <img src="https://i.postimg.cc/vmVpX2Jz/c6770204a420246126264a5c12da7dde.jpg" alt="GWP" class="gallery-img w-full h-full object-cover interactive-el shadow-md" onclick="openDetail('proj-nord', this, event)">
+                </div>
+            </div>
+
+            <div class="gallery-item flex-none flex flex-col justify-end w-[170px] md:w-[230px] relative group">
+                <p class="font-mono text-xs font-semibold mb-2 text-white tracking-tight interactive-el">PHOTOGRAPHY</p>
+                <div class="relative w-full h-[210px] md:h-[280px]">
+                    <img src="https://i.postimg.cc/8PYK3Bm6/IMG-4025.jpg" alt="PHOTOGRAPHY" class="gallery-img w-full h-full object-cover interactive-el shadow-md" onclick="openDetail('proj-netflix', this, event)">
+                </div>
+            </div>
+
+            <div class="gallery-item flex-none flex flex-col justify-end w-[170px] md:w-[230px] relative group">
+                <p class="font-mono text-xs font-semibold mb-2 text-white tracking-tight interactive-el">ABOUT ME</p>
+                <div class="relative w-full h-[240px] md:h-[340px]">
+                    <img src="https://i.postimg.cc/W3SS7M1x/IMG-1661.jpg" alt="ABOUT ME" class="gallery-img w-full h-full object-cover interactive-el shadow-md" onclick="openDetail('proj-editorial', this, event)">
+                </div>
+            </div>
+            
+            <div class="flex-none w-[10px] md:hidden"></div>
+        </div>
+    </div>
+    
+    <!-- ================= 作品详情弹窗 ================= -->
+    <div id="detail-modal" class="modal-overlay fixed inset-0 z-50 overflow-y-auto bg-black/95 cursor-none md:cursor-auto" onclick="closeDetail()">
+        <button id="close-modal-btn" class="fixed top-4 right-4 md:top-10 md:right-10 z-[60] interactive-el flex items-center gap-2 text-white bg-gray-900 px-3 md:px-4 py-2 shadow-sm border border-gray-700 hover:bg-gray-800 transition-all rounded-none" onclick="closeDetail(); event.stopPropagation();">
+            <span class="font-mono text-xs md:text-sm uppercase font-bold tracking-widest">CLOSE [X]</span>
+        </button>
+        <div id="modal-content-container" class="min-h-full w-full max-w-[100rem] mx-auto p-4 md:p-12 pt-20 md:pt-24 font-mono" onclick="event.stopPropagation()"></div>
+    </div>
+
+    <!-- ================= 单图灯箱放大弹窗 ================= -->
+    <div id="lightbox-modal" class="fixed inset-0 z-[100] bg-black/98 opacity-0 pointer-events-none transition-opacity duration-300 flex items-center justify-center cursor-none md:cursor-auto" onclick="closeLightbox()">
+        <button class="fixed top-4 right-4 md:top-10 md:right-10 z-[110] interactive-el flex items-center gap-2 text-white bg-transparent px-3 md:px-4 py-2 hover:opacity-70 transition-all rounded-none" onclick="closeLightbox(); event.stopPropagation();">
+            <span class="font-mono text-xs md:text-sm uppercase font-bold tracking-widest mix-blend-difference">CLOSE [X]</span>
+        </button>
+        <img id="lightbox-img" src="" alt="Preview" class="max-w-[95vw] max-h-[90vh] md:max-h-[95vh] object-contain shadow-2xl transform scale-95 transition-transform duration-300">
+    </div>
+
+    <!-- ================= 简历文件在线预览弹窗 ================= -->
+    <div id="resume-preview-modal" class="fixed inset-0 z-[130] bg-black/95 opacity-0 pointer-events-none transition-opacity duration-300 flex flex-col justify-between p-4 md:p-8 font-mono cursor-none md:cursor-auto" onclick="closeResumeModal()">
+        <div class="w-full max-w-[90rem] mx-auto flex justify-between items-center z-20" onclick="event.stopPropagation()">
+            <span id="resume-modal-title" class="text-xs md:text-sm text-gray-400 tracking-widest uppercase truncate max-w-[60vw]">RESUME ARCHIVE</span>
+            <div class="flex items-center gap-3">
+                <a id="resume-download-link" href="#" download="Luna_Lu_Resume" class="interactive-el text-xs md:text-sm text-white border border-white/40 px-3 py-2 hover:bg-white hover:text-black transition-all uppercase tracking-widest">
+                    DOWNLOAD
+                </a>
+                <button class="interactive-el flex items-center gap-2 text-white bg-gray-900 px-3 md:px-4 py-2 border border-gray-700 hover:bg-gray-800 transition-all rounded-none text-xs md:text-sm font-bold uppercase tracking-widest" onclick="closeResumeModal()">
+                    <span>CLOSE [X]</span>
+                </button>
+            </div>
+        </div>
+        <div id="resume-preview-body" class="flex-grow w-full max-w-[80rem] mx-auto my-4 flex items-center justify-center overflow-auto bg-neutral-900/60 border border-white/15 p-2 md:p-4" onclick="event.stopPropagation()">
+            <!-- 动态插入 PDF iframe 或 简历图片 -->
+        </div>
+    </div>
+
+    <!-- ================= 纸白色手风琴折页画册模态框 ================= -->
+    <div id="flipbook-modal" class="fixed inset-0 z-[120] bg-black/95 opacity-0 pointer-events-none transition-opacity duration-300 flex flex-col justify-between p-4 md:p-8 font-mono cursor-none md:cursor-auto" onclick="closeFlipbook()">
+        <!-- 顶部极简控制栏（仅保留关闭按钮） -->
+        <div class="w-full max-w-[95rem] mx-auto flex justify-end items-center z-20" onclick="event.stopPropagation()">
+            <button class="interactive-el flex items-center gap-2 text-white bg-gray-900 px-3 md:px-4 py-2 border border-gray-700 hover:bg-gray-800 transition-all rounded-none text-xs md:text-sm font-bold uppercase tracking-widest" onclick="closeFlipbook()">
+                <span>CLOSE [X]</span>
+            </button>
+        </div>
+
+        <!-- 中央手风琴折页舞台 -->
+        <div id="accordion-stage" class="accordion-viewport flex-grow flex items-center w-full max-w-[95rem] mx-auto my-4 relative select-none" onclick="event.stopPropagation()">
+            <button id="flip-prev-btn" onclick="flipPrev()" class="interactive-el z-50 absolute left-1 md:left-2 top-1/2 -translate-y-1/2 bg-black/75 hover:bg-white hover:text-black text-white border border-white/30 px-3 py-4 md:px-4 md:py-6 text-xs md:text-sm tracking-widest transition-all backdrop-blur-sm">
+                &#8592;
+            </button>
+
+            <!-- 手风琴连续折页轨道 -->
+            <div id="accordion-track" class="accordion-track h-[42vh] sm:h-[52vh] md:h-[62vh]"></div>
+
+            <button id="flip-next-btn" onclick="flipNext()" class="interactive-el z-50 absolute right-1 md:right-2 top-1/2 -translate-y-1/2 bg-black/75 hover:bg-white hover:text-black text-white border border-white/30 px-3 py-4 md:px-4 md:py-6 text-xs md:text-sm tracking-widest transition-all backdrop-blur-sm">
+                &#8594;
+            </button>
+        </div>
+
+        <!-- 底部指示器 -->
+        <div class="w-full max-w-[95rem] mx-auto flex flex-col items-center justify-center z-20 pb-2" onclick="event.stopPropagation()">
+            <div id="flipbook-dots" class="flex flex-wrap justify-center gap-1.5"></div>
+        </div>
+    </div>
+
+    <!-- ================= 内容模板区 (TEMPLATES) ================= -->
+    
+    <!-- 1. WORK EXPERIENCE -->
+    <template id="proj-lelabo">
+        <div class="text-white mb-8 md:mb-12 max-w-4xl mx-auto text-center">
+            <h2 class="text-lg md:text-2xl font-bold mb-4 md:mb-6 uppercase tracking-wider interactive-el">WORK EXPERIENCE</h2>
+            <p class="font-zh text-xs md:text-[13px] leading-loose tracking-wider text-center mb-6 md:mb-8 text-gray-400 interactive-el">
+                服务于LELABO品牌 VM 与零售项目管理，负责 Le Labo 中华区、APAC 及海外市场的 VM 项目落地，涵盖新店、Campaign、Popup 及常规陈列。
+            </p>
+        </div>
+        
+        <div class="text-white mb-4 max-w-5xl mx-auto">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 mb-4 text-left">
+                <p class="interactive-el">Project: 新启 (New Store Opening)</p>
+                <p class="interactive-el">Location: 杭州湖滨 (Hubin, Hangzhou)</p>
+                <p class="interactive-el">Date: 08/01/2026</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-12 md:mb-16 max-w-5xl mx-auto">
+            <img src="https://i.postimg.cc/xTrV7zGF/xin-qi-hang-zhou-hu-bin-2-LE-LABO-lai-zi-xiao-hong-shu-wang-ye-ban.jpg" class="w-full aspect-[4/3] object-cover shadow-lg hover:opacity-90 transition-opacity interactive-el">
+            <img src="https://i.postimg.cc/Y0FK0rkH/xin-qi-hang-zhou-hu-bin-1-LE-LABO-lai-zi-xiao-hong-shu-wang-ye-ban.jpg" class="w-full aspect-[4/3] object-cover shadow-lg hover:opacity-90 transition-opacity interactive-el">
+        </div>  
+        
+        <div class="text-white mb-4 max-w-5xl mx-auto">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 text-left">
+                <p class="interactive-el">Project: 樟木庭院 (POP UP)</p>
+                <p class="interactive-el">Location: 北京·合院香氛实验室 (House 19, Beijing)</p>
+                <p class="interactive-el">Date: 24/04/2026</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-16 max-w-5xl mx-auto">
+            <img src="https://i.postimg.cc/MTSqBfPW/zhang-mu-ting-yuan-2-LE-LABO-lai-zi-xiao-hong-shu-wang-ye-ban.jpg" class="w-full aspect-[3/4] object-cover shadow-lg hover:opacity-90 transition-opacity interactive-el">
+            <img src="https://i.postimg.cc/T2Qfywnk/227a83e2f6ed6f5a1d8fad83cbd0e52c.jpg" class="w-full aspect-[3/4] object-cover shadow-lg hover:opacity-90 transition-opacity interactive-el">
+            <img src="https://i.postimg.cc/9QwhNYKL/13fc61583a069f4643627985da2751c3.jpg" class="w-full aspect-[3/4] object-cover shadow-lg hover:opacity-90 transition-opacity interactive-el">
+            <img src="https://i.postimg.cc/NMDqrJ2x/d4424ea80022a9959117fff19007593d.jpg" class="w-full aspect-[3/4] object-cover shadow-lg hover:opacity-90 transition-opacity interactive-el">
+        </div>
+
+        <div class="text-white mb-4 max-w-5xl mx-auto">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 text-left">
+                <p class="interactive-el">Project: 新作，紫罗兰30</p>
+                <p class="interactive-el">Date: 24/04/2026</p>
+            </div>
+        </div>
+        <div class="w-full max-w-5xl mx-auto mb-12 md:mb-16">
+            <img src="https://i.postimg.cc/2532x0tx/fc924bef-8f20-4d23-bed0-a719c094b9c9.png" class="w-full h-auto shadow-lg hover:opacity-90 transition-opacity interactive-el">
+        </div>
+
+        <div class="text-white mb-4 max-w-5xl mx-auto">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 text-left">
+                <p class="interactive-el">Project: 城市限定抵达</p>
+                <p class="interactive-el">Location: 北京·三里屯 (Sanlitun, Beijing)</p>
+                <p class="interactive-el">Date: 01/09/2026</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto">
+            <img src="https://i.postimg.cc/sx3WTX2J/bbdfb7c0ccc635827b9deb0a2a81ee65.jpg" class="w-full aspect-[4/3] object-cover shadow-lg hover:opacity-90 transition-opacity interactive-el">
+            <img src="https://i.postimg.cc/nzJ9LzqH/818edd165addf6abf761afe343051eda.jpg" class="w-full aspect-[4/3] object-cover shadow-lg hover:opacity-90 transition-opacity interactive-el">
+        </div>
+    </template>
+
+    <!-- 2. DESIGN -->
+    <template id="proj-louvre">
+        <div class="text-white mb-8 md:mb-12 max-w-4xl mx-auto text-center">
+            <h2 class="text-lg md:text-2xl font-bold mb-6 md:mb-10 uppercase tracking-wider interactive-el">DESIGN - Space &amp; Exhibition</h2>
+        </div>
+
+        <!-- 项目 1：Electrolux WDCC 2025（第1张图作封面） -->
+        <div class="text-white mb-6 md:mb-8 max-w-4xl mx-auto text-center">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider mb-6 space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 text-left">
+                <p class="interactive-el">Project: Electrolux WDCC 2025 Booth Design</p>
+                <p class="interactive-el">Location: 上海 (Shanghai, China)</p>
+                <p class="interactive-el">Date: 25/09/2025</p>
+            </div>
+            <p class="font-zh text-xs md:text-[13px] leading-loose tracking-wider text-center text-gray-400 interactive-el">
+                围绕伊莱克斯集团在产品和包装等领域的可持续设计案例，以及伊莱克斯集团品牌历史的介绍，在WDCC2025中展现伊莱克斯作为欧洲家电行业的可持续战略领导者。
+                展厅以伊莱克斯荣获Red Dot Best of the Best 2024的环保包装设计为核心线索，将其转化为空间的构筑元素。环保材质与包装的拼插结构成为展览的视觉与叙事语言，呼应品牌将可持续理念延伸至每个日常细节。观众在其中穿梭，体验从包装到产品、从理念到生活场景的可持续旅程。
+            </p>
+        </div>
+        <div class="w-full max-w-3xl mx-auto mb-14 md:mb-20">
+            <div class="relative group overflow-hidden border border-white/20 shadow-2xl interactive-el" onclick="openFlipbook('electrolux-wdcc'); event.stopPropagation();">
+                <img id="cover-electrolux-wdcc" src="https://i.postimg.cc/P5HmxShC/7de36d121bb818658a0207e738ab300b.jpg" alt="Electrolux WDCC 2025 Cover" data-no-lightbox="true" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]">
+            </div>
+        </div>
+
+        <!-- 项目 2：共享办公空间（第6张图作封面） -->
+        <div class="text-white mb-6 md:mb-8 max-w-4xl mx-auto text-center">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider mb-6 space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 text-left">
+                <p class="interactive-el">Project: Concept Design 02</p>
+                <p class="interactive-el">Concept: Design Studio</p>
+                <p class="interactive-el">Date: 10/30/2023</p>
+            </div>
+            <p class="font-zh text-xs md:text-[13px] leading-loose tracking-wider text-center text-gray-400 interactive-el">
+                整层空间都是一个共享办公空间，开放、创造出充满创造力的空间,在小空间迸发出巨大的热情与活力。
+            </p>
+        </div>
+        <div class="w-full max-w-3xl mx-auto mb-14 md:mb-20">
+            <div class="relative group overflow-hidden border border-white/20 shadow-2xl interactive-el" onclick="openFlipbook('office-design'); event.stopPropagation();">
+                <img id="cover-office-design" src="https://i.postimg.cc/jdN7qBWX/111.png" alt="Concept Design 02 Cover" data-no-lightbox="true" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]">
+            </div>
+        </div>
+
+        <!-- 项目 3：上美影展览（第1张图作封面） -->
+        <div class="text-white mb-6 md:mb-8 max-w-4xl mx-auto text-center">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider mb-6 space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 text-left">
+                <p class="interactive-el">Project: Concept Design 03</p>
+                <p class="interactive-el">Concept: Exhibition Design</p>
+                <p class="interactive-el">Date: 07/30/2025</p>
+            </div>
+            <p class="font-zh text-xs md:text-[13px] leading-loose tracking-wider text-center text-gray-400 interactive-el">
+                将企业叙事聚焦到上美影的艺术家们秉持的“坚持不模仿别人、不重复自己”的精神之中，将以“物”为中心的叙事：时代变迁下的斗争精神、独特的民族艺术风格、传承非遗美学......
+            </p>
+        </div>
+        <div class="w-full max-w-3xl mx-auto mb-14 md:mb-20">
+            <div class="relative group overflow-hidden border border-white/20 shadow-2xl interactive-el" onclick="openFlipbook('design-project-03'); event.stopPropagation();">
+                <img id="cover-design-project-03" src="https://i.postimg.cc/Cxpxd8Sm/zuo-pin-ji-compressed-fu-ben-07.png" alt="Concept Design 03 Cover" data-no-lightbox="true" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]">
+            </div>
+        </div>
+
+        <!-- 项目 4：月球熔岩管建筑（第2张图作封面） -->
+        <div class="text-white mb-6 md:mb-8 max-w-4xl mx-auto text-center">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider mb-6 space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 text-left">
+                <p class="interactive-el">Project: Concept Design 04</p>
+                <p class="interactive-el">Concept: Lunar Architecture</p>
+                <p class="interactive-el">Date: 06/30/2022</p>
+            </div>
+            <p class="font-zh text-xs md:text-[13px] leading-loose tracking-wider text-center text-gray-400 interactive-el">
+                人类移民后应该在月球哪里生存呢？月球不像地球，它是完全真空的环境，太空辐射是非常可怕的，人类不穿防护服是根本无法在月球上生存的，而且月球的重力仅为地球的六分之一左右，人类想要在月球上生存，也需要克服重力带来的影响。2011年2月28日报道，总部设在印度艾哈迈达巴德的空间应用中心宣布，他们在月球发现了一个长1.7公里、宽120米的“熔岩管”结构，科学家认为这一巨大地下洞穴可以被用于建立宇航员基地。
+            </p>
+        </div>
+        <div class="w-full max-w-3xl mx-auto mb-8">
+            <div class="relative group overflow-hidden border border-white/20 shadow-2xl interactive-el" onclick="openFlipbook('design-project-04'); event.stopPropagation();">
+                <img id="cover-design-project-04" src="https://i.postimg.cc/sDm3fNHD/zuo-pin-ji-compressed-fu-ben-15.png" alt="Concept Design 04 Cover" data-no-lightbox="true" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]">
+            </div>
+        </div>
+    </template>
+
+    <!-- 3. GWP -->
+    <template id="proj-nord">
+        <div class="text-white mb-8 md:mb-12 max-w-4xl mx-auto text-center">
+            <h2 class="text-lg md:text-2xl font-bold mb-4 md:mb-6 uppercase tracking-wider interactive-el">GWP - Design and Production</h2>
+            <p class="font-zh text-xs md:text-[13px] leading-loose tracking-wider text-center mb-6 md:mb-8 text-gray-400 interactive-el">
+                从概念构思、设计到打样、量产的完整流程，将品牌创意转化为具有质感与传播价值的实体产品。
+            </p>
+        </div>
+
+        <div class="text-white mb-4 max-w-4xl mx-auto">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 mb-4 text-left">
+                <p class="interactive-el">Project: BROMPTON x BREITLING 联名伴手礼</p>
+                <p class="interactive-el">Location: 上海 (Shanghai)</p>
+                <p class="interactive-el">Date: 08/2024</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-12 md:mb-16 max-w-6xl mx-auto items-start">
+            <img src="https://i.postimg.cc/vmVpX2Jz/c6770204a420246126264a5c12da7dde.jpg" class="w-full h-auto shadow-lg hover:opacity-90 transition-opacity interactive-el">
+            <img src="https://i.postimg.cc/DzPFhy68/52e3cb372f916e6b0320e460838fbdd2.jpg" class="w-full h-auto shadow-lg hover:opacity-90 transition-opacity interactive-el">
+        </div>
+        
+        <div class="text-white mb-4 max-w-4xl mx-auto">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 text-left">
+                <p class="interactive-el">Project: 安踏【瞬息2】限定发售现场 Workshop</p>
+                <p class="interactive-el">Location: 杭州 (Hangzhou)</p>
+                <p class="interactive-el">Date: 09/2024</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-12 md:mb-16 max-w-6xl mx-auto items-start">
+            <img src="https://i.postimg.cc/BvLY5h8M/an-ta-shun-xi2-xian-ding-fa-shou-xian-changworkshop-1-aolifestyle-lai-zi-xiao-hong-shu-wang-ye-ban.jpg" class="w-full h-auto shadow-lg hover:opacity-90 transition-opacity interactive-el">
+            <img src="https://i.postimg.cc/0jfc5F3z/an-ta-shun-xi2-xian-ding-fa-shou-xian-changworkshop-2-aolifestyle-lai-zi-xiao-hong-shu-wang-ye-ban.jpg" class="w-full h-auto shadow-lg hover:opacity-90 transition-opacity interactive-el">
+        </div>
+
+        <div class="text-white mb-4 max-w-4xl mx-auto">
+            <div class="font-zh text-xs md:text-sm leading-relaxed tracking-wider space-y-1 text-gray-400 border-l-2 border-white/30 pl-3 md:pl-4 text-left">
+                <p class="interactive-el">Project: ON昂跑满赠礼</p>
+                <p class="interactive-el">Date: 05/2024</p>
+            </div>
+        </div>
+        <div class="w-full max-w-4xl mx-auto">
+            <img src="https://i.postimg.cc/0yLdv9jv/9L5A1135.jpg" class="w-full h-auto shadow-lg hover:opacity-90 transition-opacity interactive-el">
+        </div>
+    </template>
+
+    <!-- 4. PHOTOGRAPHY (Film) -->
+    <template id="proj-netflix">
+        <div class="min-h-screen w-full film-mobile-pad" style="background-color: #f5f5f5; color: #000; padding: 4rem 2rem 8rem 2rem;">
+            <div class="max-w-[1200px] mx-auto w-full relative mb-12 md:mb-16 px-0 md:px-8">
+                
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 md:mb-16">
+                    <h1 class="text-5xl md:text-[8rem] font-bold tracking-tighter interactive-el leading-none font-mono" style="letter-spacing: -0.05em;">Film</h1>
+                    <span class="text-sm md:text-2xl font-medium mt-2 md:mt-4 interactive-el font-mono text-gray-500 md:text-black"></span>
+                </div>
+
+                <div class="photo-grid-container font-mono" style="gap: 1.25rem;">
+                    
+                    <div class="photo-item col-span-3 col-start-9 interactive-el group">
+                        <span class="photo-number photo-num-left">01</span>
+                        <img src="https://i.postimg.cc/xCMRV6B9/000065.png" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+
+                    <div class="photo-item col-span-4 col-start-1 mt-10 interactive-el group">
+                        <span class="photo-number photo-num-right">02</span>
+                        <img src="https://i.postimg.cc/9M0hxqkW/000055.jpg" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+
+                    <div class="photo-item col-span-4 col-start-7 mt-16 interactive-el group">
+                        <span class="photo-number photo-num-bottom-right">03</span>
+                        <img src="https://i.postimg.cc/52p9n1tR/000051.png" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+
+                    <div class="photo-item col-span-4 col-start-3 mt-12 interactive-el group">
+                        <span class="photo-number photo-num-left">04</span>
+                        <img src="https://i.postimg.cc/SsYySMGN/000066.png" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+
+                    <div class="photo-item col-span-3 col-start-10 mt-4 interactive-el group">
+                        <span class="photo-number photo-num-bottom-left">05</span>
+                        <img src="https://i.postimg.cc/9ft03T1y/IMG-4145.avif" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+
+                    <div class="photo-item col-span-5 col-start-1 mt-20 interactive-el group">
+                        <span class="photo-number photo-num-right">06</span>
+                        <img src="https://i.postimg.cc/0jqq9HQ0/25921BFE-E520-4DD8-89C1-1ED4EB399617.jpg" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+
+                    <div class="photo-item col-span-3 col-start-7 mt-8 interactive-el group">
+                        <span class="photo-number photo-num-right">07</span>
+                        <img src="https://i.postimg.cc/vZTCwdzv/e6c6b7df6b963f1b60d1c8bfb78b407a.jpg" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+
+                    <div class="photo-item col-span-3 col-start-2 mt-24 interactive-el group">
+                        <span class="photo-number photo-num-bottom-left">08</span>
+                        <img src="https://i.postimg.cc/SNTtrv4p/894bd072dha6a61eeeedbdd32de74fd6.jpg" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+                    
+                    <div class="photo-item col-span-4 col-start-6 mt-16 interactive-el group">
+                        <span class="photo-number photo-num-left">09</span>
+                        <img src="https://i.postimg.cc/W4rWspJ0/151056de1n7544fe15bcce46c3e3d4e3.jpg" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+
+                    <div class="photo-item col-span-3 col-start-10 mt-8 interactive-el group">
+                        <span class="photo-number photo-num-right">10</span>
+                        <img src="https://i.postimg.cc/XYBxgNxv/7355.jpg" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+
+                    <div class="photo-item col-span-4 col-start-4 mt-12 mb-8 md:mb-16 interactive-el group">
+                        <span class="photo-number photo-num-bottom-right">11</span>
+                        <img src="https://i.postimg.cc/2yvhZ3CS/wei-xin-tu-pian-20260905212929-334-24.jpg" class="aspect-square transition-transform duration-500 group-hover:scale-[1.02]">
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-[10px] md:text-sm font-medium uppercase tracking-widest mt-8 md:mt-12 border-t border-gray-300 pt-4 md:pt-6 font-mono">
+                    <span class="interactive-el">Daily RECORD</span>
+                    <span class="interactive-el hidden sm:inline-block">CAPTURING MOMENTS</span>
+                    <span class="interactive-el">More to Come</span>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 5. ABOUT ME -->
+    <template id="proj-editorial">
+        <div class="max-w-5xl mx-auto text-white pb-16 md:pb-24 px-2 md:px-6 font-mono">
+            <!-- 顶部个人简介与肖像 -->
+            <div class="flex flex-col md:flex-row items-start md:items-end justify-between gap-8 pb-10 border-b border-dotted border-white/35">
+                <div class="max-w-2xl">
+                    <h2 class="text-lg md:text-2xl font-bold uppercase tracking-wider mb-3 interactive-el">LUNA LU / 鲁月</h2>
+                    <p class="text-xs md:text-sm text-gray-400 tracking-wider mb-4 interactive-el">
+                        TEL: 13007073782 ｜ WECHAT: Luna-Lue ｜ SHANGHAI 
+                    </p>
+                    <p class="text-xs md:text-sm leading-relaxed text-gray-300 interactive-el">
+                       
+                    </p>
+                </div>
+                <div class="w-36 md:w-44 shrink-0 border border-white/20 p-1 bg-white/5">
+                    <img src="https://i.postimg.cc/W3SS7M1x/IMG-1661.jpg" alt="Luna Lu" class="w-full h-auto object-cover shadow-lg hover:opacity-90 transition-opacity interactive-el">
+                </div>
+            </div>
+
+            <!-- 教育经历板块 (EDUCATION) -->
+            <section class="mt-10 md:mt-14">
+                <div class="border-b border-dotted border-white/35 pb-3">
+                    <h3 class="text-lg md:text-2xl font-bold uppercase tracking-wider text-white interactive-el">EDUCATION</h3>
+                </div>
+                <!-- 表头 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 py-3 border-b border-dotted border-white/25 text-xs md:text-sm text-gray-400 uppercase tracking-wider">
+                    <div class="md:col-span-3">YEAR</div>
+                    <div class="md:col-span-5 hidden md:block">INSTITUTION</div>
+                    <div class="md:col-span-4 hidden md:block">MAJOR &amp; DEGREE</div>
+                </div>
+                <!-- 教育条目 1 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 py-5 border-b border-dotted border-white/25 text-xs md:text-sm leading-relaxed tracking-wider interactive-el">
+                    <div class="md:col-span-3 text-gray-300">2022.09 - 2025.07</div>
+                    <div class="md:col-span-5 text-white">
+                        <div>华东师范大学 (985 / 211)</div>
+                        <div class="text-gray-400">设计学院 · 全日制</div>
+                    </div>
+                    <div class="md:col-span-4 text-gray-200">
+                        <div>艺术设计</div>
+                        <div>硕士 / M.A.</div>
+                    </div>
+                </div>
+                <!-- 教育条目 2 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 py-5 border-b border-dotted border-white/25 text-xs md:text-sm leading-relaxed tracking-wider interactive-el">
+                    <div class="md:col-span-3 text-gray-300">2023.09 - 2025.02</div>
+                    <div class="md:col-span-5 text-white">
+                        <div>University of West Bohemia</div>
+                        <div class="text-gray-400">CZECH REPUBLIC · 交换 / 交流</div>
+                    </div>
+                    <div class="md:col-span-4 text-gray-200">
+                        <div>艺术设计</div>
+                        <div>硕士交换 / M.A. </div>
+                    </div>
+                </div>
+                <!-- 教育条目 3 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 py-5 border-b border-dotted border-white/25 text-xs md:text-sm leading-relaxed tracking-wider interactive-el">
+                    <div class="md:col-span-3 text-gray-300">2018.09 - 2022.06</div>
+                    <div class="md:col-span-5 text-white">
+                        <div>山西大学 (双一流)</div>
+                        <div class="text-gray-400">美术学院 · 全日制</div>
+                    </div>
+                    <div class="md:col-span-4 text-gray-200">
+                        <div>环境艺术设计</div>
+                        <div>本科 / B.A.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 工作经历板块 (EXPERIENCE) -->
+            <section class="mt-12 md:mt-16">
+                <div class="border-b border-dotted border-white/35 pb-3">
+                    <h3 class="text-lg md:text-2xl font-bold uppercase tracking-wider text-white interactive-el">EXPERIENCE</h3>
+                </div>
+                <!-- 表头 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 py-3 border-b border-dotted border-white/25 text-xs md:text-sm text-gray-400 uppercase tracking-wider">
+                    <div class="md:col-span-3">YEAR</div>
+                    <div class="md:col-span-5 hidden md:block">ORGANIZATION / LOCATION</div>
+                    <div class="md:col-span-4 hidden md:block">ROLE</div>
+                </div>
+                <!-- 正式工作条目 -->
+                <div class="py-6 border-b border-dotted border-white/25 text-xs md:text-sm leading-relaxed tracking-wider">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 mb-5 interactive-el">
+                        <div class="md:col-span-3 text-gray-300">2025.07 - PRESENT</div>
+                        <div class="md:col-span-5 text-white">
+                            <div>上海雨郇空间设计工程有限公司</div>
+                            <div class="text-gray-400">SHANGHAI / 上海</div>
+                        </div>
+                        <div class="md:col-span-4 text-gray-200">
+                            <div>Le Labo | VM Project Executive</div>
+                        </div>
+                    </div>
+                    <!-- 详细职责拆解（恢复左对齐，保持统一字号与行距） -->
+                    <div class="md:pl-[25%] space-y-4 text-gray-400 text-left">
+                        <div class="interactive-el">
+                            <p class="text-gray-300 mb-1.5">1. VM 项目统筹 (60%)</p>
+                            <ul class="space-y-2 text-xs md:text-[13px] leading-loose text-left text-gray-400">
+                                <li>• 中华区 NEW STORE：统筹雅诗兰黛旗下香氛品牌 Le Labo 中华区 18 家门店 VM 物料规划与统筹，协同品牌搭建 Global Supply + Local Sourcing 双路径物料管理流程，累计覆盖 30+ 项新店物料，支持门店形象及开店计划稳定推进。</li>
+                                <li>• APAC &amp; 海外项目管理：主导 TR APAC (Travel Retail Asia Pacific) 及海外 VM 项目，对接 APAC / 海外团队及国内供应商，统筹报价、采购、定制化道具开发、跨境运输及最终交付，支持美国、日韩等海外门店 15+ VM 落地。</li>
+                                <li>• Campaign &amp; Popup：参与 20+ 个品牌主题 Campaign 及 Popup 项目，围绕橱窗、店内陈列等重点视觉区域进行陈列物料 sourcing 与艺术家资源对接，协同 Global 团队及供应商推进方案确认、制作及落地。</li>
+                            </ul>
+                        </div>
+                        <div class="interactive-el">
+                            <p class="text-gray-300 mb-1.5">2. 品牌物料与供应链管理 (30%)</p>
+                            <ul class="space-y-2 text-xs md:text-[13px] leading-loose text-left text-gray-400">
+                                <li>• 陈列物料管理：基于 Global VM 标准，从 0→1 完成 Local 陈列物料，覆盖器皿、手作艺术品、古董家具等多品类；维护约 10 家固定合作供应商并持续拓展艺术家及定制资源。</li>
+                                <li>• 定制道具开发与项目执行：参与特殊材质及非标陈列道具开发，从需求确认、材质工艺沟通、打样到生产交付全程跟进；负责供应商询价、比价及国内与海外项目物料包装、出货与跨境运输。</li>
+                                <li>• VM 物料管理：负责 VM 物料信息及项目物料配置管理，按门店及 Campaign 需求进行调配、使用及复用，降低重复采购及闲置成本。</li>
+                            </ul>
+                        </div>
+                        <div class="interactive-el">
+                            <p class="text-gray-300 mb-1.5">3. 跨品牌项目支持 (10%)</p>
+                            <ul class="space-y-2 text-xs md:text-[13px] leading-loose text-left text-gray-400">
+                                <li>• LEGO LAND 乐高乐园：参与乐高乐园整体圣诞装饰项目，负责装饰品及物料的筛选、采购与现场执行落地。</li>
+                                <li>• LA MER：参与 La Mer CNY VM Guidelines 项目，对接 Global 英文 Guidelines，与国内设计师沟通执行标准并推动方案落地。</li>
+                                <li>• JO MALONE：根据陈列主题及物料需求，负责书籍及主题陈列物料的 Sourcing、报价、采购及交付，支持店内主题陈列落地。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 实习经历板块 (INTERNSHIP) -->
+            <section class="mt-12 md:mt-16">
+                <div class="border-b border-dotted border-white/35 pb-3">
+                    <h3 class="text-lg md:text-2xl font-bold uppercase tracking-wider text-white interactive-el">INTERNSHIP</h3>
+                </div>
+                <!-- 表头 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 py-3 border-b border-dotted border-white/25 text-xs md:text-sm text-gray-400 uppercase tracking-wider">
+                    <div class="md:col-span-3">YEAR</div>
+                    <div class="md:col-span-5 hidden md:block">ORGANIZATION / LOCATION</div>
+                    <div class="md:col-span-4 hidden md:block">ROLE</div>
+                </div>
+                <!-- 实习条目 1 -->
+                <div class="py-6 border-b border-dotted border-white/25 text-xs md:text-sm leading-relaxed tracking-wider">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 mb-4 interactive-el">
+                        <div class="md:col-span-3 text-gray-300">2024.03 - 2024.11</div>
+                        <div class="md:col-span-5 text-white">
+                            <div>上海物集设计咨询有限公司</div>
+                            <div class="text-gray-400">SHANGHAI / 上海</div>
+                        </div>
+                        <div class="md:col-span-4 text-gray-200">品牌策划与执行</div>
+                    </div>
+                    <div class="md:pl-[25%] text-xs md:text-[13px] leading-loose text-left text-gray-400 space-y-2 interactive-el">
+                        <p>• 品牌创意策划与制作：独立参与 10+ 个 GWP 项目，涵盖企业礼盒、品牌礼赠及联名产品等，负责从创意策划、预算制定、设计、打样到量产的完整流程，为 Nike、On 昂跑、安踏 Workshop、Brompton 等品牌提供创意及制作支持。</p>
+                        <p>• 项目执行与成本控制：负责蔚来车商城 2 个道具项目，参与供应商询价、报价及成本控制，跟进方案、打样、生产及品质交付，确保项目按期落地。</p>
+                    </div>
+                </div>
+                <!-- 实习条目 2 -->
+                <div class="py-6 border-b border-dotted border-white/25 text-xs md:text-sm leading-relaxed tracking-wider">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 mb-4 interactive-el">
+                        <div class="md:col-span-3 text-gray-300">2023.06 - 2023.10</div>
+                        <div class="md:col-span-5 text-white">
+                            <div>奥伦纳素商业有限公司</div>
+                            <div class="text-gray-400">SHANGHAI / 上海</div>
+                        </div>
+                        <div class="md:col-span-4 text-gray-200">Erno Laszlo | 视觉陈列实习生</div>
+                    </div>
+                    <div class="md:pl-[25%] text-xs md:text-[13px] leading-loose text-left text-gray-400 space-y-2 interactive-el">
+                        <p>• 传播策略：负责线上直播项目的趋势分析与汇报，管理超过 30 次的直播设计，99% 项目按时交付并符合品牌要求，同时协同市场与运营团队推动品牌线下 3 场活动的物料陈列展示。</p>
+                        <p>• 品牌内容执行：独立管理 30+ 场视觉执行，包括 KV 主视觉、日常物料及办公空间形象陈列，支持活动内容延展，确保品牌表达一致性。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 技能与语言板块 (SKILLS & OTHERS) -->
+            <section class="mt-12 md:mt-16">
+                <div class="border-b border-dotted border-white/35 pb-3">
+                    <h3 class="text-lg md:text-2xl font-bold uppercase tracking-wider text-white interactive-el">SKILLS &amp; OTHERS</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 py-4 border-b border-dotted border-white/25 text-xs md:text-sm leading-relaxed tracking-wider interactive-el">
+                    <div class="md:col-span-3 text-gray-400 uppercase">SOFTWARE &amp; SKILLS</div>
+                    <div class="md:col-span-9 text-gray-200">SketchUp, CAD, Adobe Illustrator (AI), Office (PowerPoint, Excel, Word)</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 py-4 border-b border-dotted border-white/25 text-xs md:text-sm leading-relaxed tracking-wider interactive-el">
+                    <div class="md:col-span-3 text-gray-400 uppercase">LANGUAGES</div>
+                    <div class="md:col-span-9 text-gray-200">中文 (母语) ｜ 英语 (IELTS 6，可作为工作语言)</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 py-4 border-b border-dotted border-white/25 text-xs md:text-sm leading-relaxed tracking-wider interactive-el">
+                    <div class="md:col-span-3 text-gray-400 uppercase">INTERESTS</div>
+                    <div class="md:col-span-9 text-gray-200">健身、逛街、大自然爱好者</div>
+                </div>
+            </section>
+        </div>
+    </template>
+
+    <!-- ================= 交互脚本区 (JAVASCRIPT) ================= -->
+    <script>
+        // 1. 自定义光标逻辑
+        const cursor = document.getElementById('custom-cursor');
+        
+        document.addEventListener('mousemove', (e) => {
+            requestAnimationFrame(() => {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+            });
+        });
+
+        document.addEventListener('mouseover', (e) => {
+            if (e.target.closest('.interactive-el, p, h1, h2, h3, button, label, a')) {
+                cursor.classList.add('hovered');
+            }
+        });
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.closest('.interactive-el, p, h1, h2, h3, button, label, a')) {
+                cursor.classList.remove('hovered');
+            }
+        });
+
+        // 2. 项目详情模态框逻辑
+        let currentSelectedImg = null;
+
+        function openDetail(templateId, clickedImg, event) {
+            const templateEl = document.getElementById(templateId);
+            if (!templateEl) {
+                console.warn(`Template "${templateId}" not found.`);
+                return;
+            }
+
+            if (currentSelectedImg) {
+                currentSelectedImg.classList.remove('selected');
+            }
+            clickedImg.classList.add('selected');
+            currentSelectedImg = clickedImg;
+
+            const slider = document.getElementById('gallery-slider');
+            slider.classList.add('is-viewing');
+            document.querySelectorAll('.gallery-item').forEach(item => item.classList.remove('active-item'));
+            clickedImg.closest('.gallery-item').classList.add('active-item');
+
+            const templateContent = templateEl.innerHTML;
+            const contentContainer = document.getElementById('modal-content-container');
+            const modalOverlay = document.getElementById('detail-modal');
+            const closeBtn = document.getElementById('close-modal-btn');
+            
+            contentContainer.innerHTML = templateContent;
+
+            // 绑定详情页内图片灯箱放大事件（排除带有 data-no-lightbox 标记的图片）
+            const detailImages = contentContainer.querySelectorAll('img');
+            detailImages.forEach(img => {
+                if (!img.classList.contains('interactive-el')) {
+                    img.classList.add('interactive-el');
+                }
+                if (img.dataset.noLightbox === 'true') {
+                    return;
+                }
+                img.onclick = (e) => {
+                    openLightbox(img.src);
+                    e.stopPropagation();
+                };
+            });
+
+            // 针对 Film 模块切换浅色背景
+            if (templateId === 'proj-netflix') {
+                modalOverlay.classList.remove('bg-black/95');
+                modalOverlay.classList.add('bg-[#f5f5f5]');
+                contentContainer.className = "min-h-full w-full max-w-[100rem] mx-auto p-0 font-mono";
+                closeBtn.className = "fixed top-4 right-4 md:top-10 md:right-10 z-[60] interactive-el flex items-center gap-2 text-black bg-white px-3 md:px-4 py-2 shadow-sm border border-black hover:bg-black hover:text-white transition-all rounded-none";
+            } else {
+                modalOverlay.classList.remove('bg-[#f5f5f5]');
+                modalOverlay.classList.add('bg-black/95');
+                contentContainer.className = "min-h-full w-full max-w-[100rem] mx-auto p-4 md:p-12 pt-20 md:pt-24 font-mono";
+                closeBtn.className = "fixed top-4 right-4 md:top-10 md:right-10 z-[60] interactive-el flex items-center gap-2 text-white bg-gray-900 px-3 md:px-4 py-2 shadow-sm border border-gray-700 hover:bg-gray-800 transition-all rounded-none";
+            }
+
+            // 同步各设计项目封面图
+            if (templateId === 'proj-louvre') {
+                syncSavedCoversToTemplate();
+            }
+
+            // 更新 ABOUT ME 简历状态显示
+            if (templateId === 'proj-editorial') {
+                updateResumeStatusUI();
+            }
+
+            setTimeout(() => {
+                modalOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                modalOverlay.scrollTop = 0;
+            }, 300);
+        }
+
+        function closeDetail() {
+            document.getElementById('detail-modal').classList.remove('active');
+            document.body.style.overflow = '';
+
+            const slider = document.getElementById('gallery-slider');
+            slider.classList.remove('is-viewing');
+            document.querySelectorAll('.gallery-item').forEach(item => item.classList.remove('active-item'));
+
+            if (currentSelectedImg) {
+                setTimeout(() => {
+                    currentSelectedImg.classList.remove('selected');
+                    currentSelectedImg = null;
+                }, 400);
+            }
+        }
+
+        // 3. 单图灯箱放大弹窗逻辑
+        function openLightbox(imgSrc) {
+            const lightbox = document.getElementById('lightbox-modal');
+            const lightboxImg = document.getElementById('lightbox-img');
+            lightboxImg.src = imgSrc;
+
+            lightbox.classList.remove('opacity-0', 'pointer-events-none');
+            lightbox.classList.add('opacity-100', 'pointer-events-auto');
+
+            setTimeout(() => {
+                lightboxImg.classList.remove('scale-95');
+                lightboxImg.classList.add('scale-100');
+            }, 50);
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox-modal');
+            const lightboxImg = document.getElementById('lightbox-img');
+            
+            lightbox.classList.remove('opacity-100', 'pointer-events-auto');
+            lightbox.classList.add('opacity-0', 'pointer-events-none');
+            
+            lightboxImg.classList.remove('scale-100');
+            lightboxImg.classList.add('scale-95');
+            
+            setTimeout(() => { 
+                lightboxImg.src = ''; 
+            }, 300);
+        }
+
+        // 3.5 个人简历上传、本地持久化与在线预览逻辑
+        const RESUME_STORAGE_KEY = 'luna_portfolio_resume_v1';
+        let currentResumeData = {
+            name: 'LUNA_LU_PORTFOLIO_CV.JPG',
+            type: 'image/jpeg',
+            url: 'https://i.postimg.cc/W3SS7M1x/IMG-1661.jpg'
+        };
+
+        function loadSavedResume() {
+            try {
+                const raw = localStorage.getItem(RESUME_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.url) {
+                        currentResumeData = parsed;
+                    }
+                }
+            } catch (e) {
+                console.warn('读取本地保存简历失败:', e);
+            }
+        }
+        loadSavedResume();
+
+        function updateResumeStatusUI() {
+            const statusEl = document.getElementById('resume-status-text');
+            if (statusEl && currentResumeData) {
+                statusEl.textContent = `${currentResumeData.name} (READY)`;
+            }
+        }
+
+        function handleResumeUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                currentResumeData = {
+                    name: file.name.toUpperCase(),
+                    type: file.type,
+                    url: dataUrl
+                };
+                updateResumeStatusUI();
+                try {
+                    localStorage.setItem(RESUME_STORAGE_KEY, JSON.stringify(currentResumeData));
+                } catch (err) {
+                    console.warn('文件较大，仅在当前页面会话生效:', err);
+                }
+                openResumeModal();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function openResumeModal() {
+            const modal = document.getElementById('resume-preview-modal');
+            const body = document.getElementById('resume-preview-body');
+            const titleEl = document.getElementById('resume-modal-title');
+            const downloadLink = document.getElementById('resume-download-link');
+
+            titleEl.textContent = currentResumeData.name;
+            downloadLink.href = currentResumeData.url;
+            downloadLink.download = currentResumeData.name;
+
+            if (currentResumeData.type === 'application/pdf' || currentResumeData.url.startsWith('data:application/pdf')) {
+                body.innerHTML = `<iframe src="${currentResumeData.url}" class="w-full h-[75vh] md:h-[80vh] border-0 bg-white"></iframe>`;
+            } else {
+                body.innerHTML = `<img src="${currentResumeData.url}" alt="Resume Preview" class="max-w-full max-h-[78vh] object-contain shadow-2xl">`;
+            }
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100', 'pointer-events-auto');
+        }
+
+        function closeResumeModal() {
+            const modal = document.getElementById('resume-preview-modal');
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        // 4. 首页画廊桌面端拖拽横向滚动
+        const slider = document.getElementById('gallery-slider');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            cursor.classList.add('dragging');
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+        slider.addEventListener('mouseleave', () => {
+            isDown = false;
+            cursor.classList.remove('dragging');
+        });
+        slider.addEventListener('mouseup', () => {
+            isDown = false;
+            cursor.classList.remove('dragging');
+        });
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            slider.scrollLeft = scrollLeft - walk;
+        });
+
+        document.querySelectorAll('.gallery-img').forEach(img => {
+            img.addEventListener('dragstart', (e) => e.preventDefault());
+        });
+
+        // 5. 纸白色手风琴折页画册配置与交互逻辑
+        const STORAGE_KEY = 'luna_portfolio_flipbooks_v1';
+
+        const flipbookCollections = {
+            'electrolux-wdcc': {
+                pages: [
+                    'https://i.postimg.cc/P5HmxShC/7de36d121bb818658a0207e738ab300b.jpg',
+                    'https://i.postimg.cc/tCY3ws5w/b4eeff7c528b51bee7e67cbfcad3da1f.jpg',
+                    'https://i.postimg.cc/9X1bv5jT/7f7059793499a3b1ecfe49bdba09a9cd.jpg',
+                    'https://i.postimg.cc/SNdWnWKf/IMG-7688.jpg',
+                    'https://i.postimg.cc/8C1WJ9N2/6bc011bae456464aa579c64768e11995.jpg',
+                    'https://i.postimg.cc/L5fBBP7w/e598224fa6dd901cfb04135ead1c33d2.jpg',
+                    'https://i.postimg.cc/L8vkT2Cn/a388895dd3bb3d2238acbe06a93664a5.jpg',
+                    'https://i.postimg.cc/65fCWBNC/563110234f77c6653efcf98bd7677ba9.jpg'
+                ]
+            },
+            'office-design': {
+                pages: [
+                    'https://i.postimg.cc/T3cws6S8/zuo-pin-ji-compressed-fu-ben-00.png',
+                    'https://i.postimg.cc/L5zRZkFp/zuo-pin-ji-compressed-fu-ben-01.png',
+                    'https://i.postimg.cc/C5pK3nPS/zuo-pin-ji-compressed-fu-ben-02.png',
+                    'https://i.postimg.cc/9f4FzYsd/zuo-pin-ji-compressed-fu-ben-03.png',
+                    'https://i.postimg.cc/vH3QzKsP/zuo-pin-ji-compressed-fu-ben-04.png',
+                    'https://i.postimg.cc/jdN7qBWX/111.png',
+                    'https://i.postimg.cc/XYdchpKs/333.png',
+                    'https://i.postimg.cc/fyS09r8h/444.png'
+                ]
+            },
+            'design-project-03': {
+                pages: [
+                    'https://i.postimg.cc/Cxpxd8Sm/zuo-pin-ji-compressed-fu-ben-07.png',
+                    'https://i.postimg.cc/zf0zdPWF/zuo-pin-ji-compressed-fu-ben-08.png',
+                    'https://i.postimg.cc/sgzGqqQx/zuo-pin-ji-compressed-fu-ben-09.png',
+                    'https://i.postimg.cc/pVn9TRKL/zuo-pin-ji-compressed-fu-ben-10.png',
+                    'https://i.postimg.cc/N0zMszMg/zuo-pin-ji-compressed-fu-ben-11.png',
+                    'https://i.postimg.cc/90GFBXBY/zuo-pin-ji-compressed-fu-ben-12.png',
+                    'https://i.postimg.cc/13R5pQVm/zuo-pin-ji-compressed-fu-ben-13.png'
+                ]
+            },
+            'design-project-04': {
+                pages: [
+                    'https://i.postimg.cc/QCrjVGrT/zuo-pin-ji-compressed-fu-ben-14.png',
+                    'https://i.postimg.cc/sDm3fNHD/zuo-pin-ji-compressed-fu-ben-15.png',
+                    'https://i.postimg.cc/JzhMs5ST/zuo-pin-ji-compressed-fu-ben-16.png',
+                    'https://i.postimg.cc/nLjxkcFF/zuo-pin-ji-compressed-fu-ben-17.png',
+                    'https://i.postimg.cc/vB5dJqxj/zuo-pin-ji-compressed-fu-ben-19.png'
+                ]
+            }
+        };
+
+        // 读取并恢复本地已保存的画册图片
+        function loadSavedFlipbooks() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const saved = JSON.parse(raw);
+                Object.keys(saved).forEach(key => {
+                    if (flipbookCollections[key] && Array.isArray(saved[key]) && saved[key].length > 0) {
+                        flipbookCollections[key].pages = saved[key];
+                    }
+                });
+            } catch (e) {
+                console.warn('读取本地保存画册失败:', e);
+            }
+        }
+
+        // 同步各项目指定封面图（项目1第1张、项目2第6张、项目3第1张、项目4第2张）
+        const projectCoverIndexMap = {
+            'electrolux-wdcc': 0,
+            'office-design': 5,
+            'design-project-03': 0,
+            'design-project-04': 1
+        };
+
+        function syncSavedCoversToTemplate() {
+            Object.keys(flipbookCollections).forEach(key => {
+                const pages = flipbookCollections[key].pages;
+                const coverEl = document.getElementById(`cover-${key}`);
+                const targetIdx = projectCoverIndexMap[key] ?? 0;
+                if (coverEl && pages && pages.length > 0) {
+                    coverEl.src = pages[targetIdx] || pages[0];
+                }
+            });
+        }
+
+        loadSavedFlipbooks();
+
+        let currentBookKey = 'office-design';
+        let activeFoldIndex = 0;
+        let detectedAspectRatio = 1.5;
+        const UNIFIED_PAPER_COLOR = '#f8f8f6';
+
+        function isMobileView() {
+            return window.innerWidth < 768;
+        }
+
+        // 自动检测首张图片真实横版宽高比，使纸张尺寸完美贴合作品画幅
+        function detectImageAspectRatio(src, callback) {
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                if (tempImg.naturalWidth && tempImg.naturalHeight) {
+                    const ratio = tempImg.naturalWidth / tempImg.naturalHeight;
+                    detectedAspectRatio = Math.max(1.2, Math.min(2.1, ratio));
+                }
+                if (callback) callback();
+            };
+            tempImg.onerror = () => {
+                if (callback) callback();
+            };
+            tempImg.src = src;
+        }
+
+        function openFlipbook(bookKey) {
+            currentBookKey = bookKey;
+            activeFoldIndex = 0;
+            const bookData = flipbookCollections[bookKey];
+
+            buildAccordionPanels();
+            updateAccordionLayout();
+
+            if (bookData.pages && bookData.pages.length > 0) {
+                detectImageAspectRatio(bookData.pages[0], () => {
+                    updateAccordionLayout();
+                });
+            }
+
+            const modal = document.getElementById('flipbook-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100', 'pointer-events-auto');
+        }
+
+        function closeFlipbook() {
+            const modal = document.getElementById('flipbook-modal');
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function buildAccordionPanels() {
+            const pages = flipbookCollections[currentBookKey].pages;
+            const track = document.getElementById('accordion-track');
+            track.innerHTML = '';
+
+            pages.forEach((src, index) => {
+                const panel = document.createElement('div');
+                panel.className = 'accordion-panel interactive-el flex items-center justify-center';
+                panel.dataset.index = index;
+                panel.style.backgroundColor = UNIFIED_PAPER_COLOR;
+
+                panel.onclick = (e) => {
+                    e.stopPropagation();
+                    if (activeFoldIndex !== index) {
+                        activeFoldIndex = index;
+                        updateAccordionLayout();
+                    }
+                };
+
+                panel.innerHTML = `
+                    <img src="${src}" alt="Fold ${index + 1}" class="w-full h-full object-contain p-2 sm:p-3 md:p-5 select-none pointer-events-none transition-transform duration-700">
+                    <div class="magazine-paper-texture"></div>
+                    ${index > 0 ? '<div class="accordion-crease-line"></div>' : ''}
+                    <div class="accordion-fold-shade"></div>
+                    <span class="absolute bottom-2.5 right-3.5 text-[10px] text-gray-600/80 tracking-widest z-30 font-bold mix-blend-multiply">
+                        ${String(index + 1).padStart(2, '0')}
+                    </span>
+                `;
+
+                track.appendChild(panel);
+            });
+        }
+
+        function updateAccordionLayout() {
+            const pages = flipbookCollections[currentBookKey].pages;
+            const total = pages.length;
+            const stage = document.getElementById('accordion-stage');
+            const track = document.getElementById('accordion-track');
+            const panels = track.querySelectorAll('.accordion-panel');
+            if (!panels.length) return;
+
+            const mobile = isMobileView();
+            const stageWidth = stage.clientWidth || window.innerWidth;
+            const stageHeight = stage.clientHeight || window.innerHeight * 0.65;
+
+            const maxExpandedWidth = mobile
+                ? Math.min(stageWidth * 0.84, 420)
+                : Math.min(stageWidth * 0.66, 880);
+            const idealHeight = maxExpandedWidth / detectedAspectRatio;
+            const finalHeight = Math.min(stageHeight * 0.92, Math.max(mobile ? 220 : 340, idealHeight));
+            const expandedWidth = Math.min(maxExpandedWidth, finalHeight * detectedAspectRatio);
+
+            track.style.height = `${Math.round(finalHeight)}px`;
+
+            const collapsedWidth = mobile
+                ? Math.max(36, stageWidth * 0.08)
+                : Math.max(76, stageWidth * 0.07);
+
+            let offsetToActiveCenter = 0;
+
+            panels.forEach((panel, i) => {
+                const distance = i - activeFoldIndex;
+                const isExpanded = distance === 0;
+                const shade = panel.querySelector('.accordion-fold-shade');
+                const img = panel.querySelector('img');
+
+                const panelWidth = isExpanded ? expandedWidth : collapsedWidth;
+                panel.style.width = `${panelWidth}px`;
+
+                if (i < activeFoldIndex) {
+                    offsetToActiveCenter += panelWidth;
+                } else if (i === activeFoldIndex) {
+                    offsetToActiveCenter += panelWidth / 2;
+                }
+
+                if (isExpanded) {
+                    panel.style.transformOrigin = 'center center';
+                    panel.style.transform = 'rotateY(0deg) translateZ(18px)';
+                    panel.style.filter = 'brightness(1)';
+                    panel.style.zIndex = '30';
+                    shade.style.background = 'linear-gradient(to right, rgba(0,0,0,0.03) 0%, rgba(255,255,255,0.18) 12%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.02) 100%)';
+                    img.style.opacity = '1';
+                } else {
+                    const isOddFold = Math.abs(distance) % 2 === 1;
+                    const foldAngle = isOddFold ? -28 : 28;
+                    const depthZ = -Math.min(Math.abs(distance) * 14, 70);
+
+                    panel.style.transformOrigin = distance < 0 ? 'right center' : 'left center';
+                    panel.style.transform = `perspective(1600px) rotateY(${foldAngle}deg) translateZ(${depthZ}px)`;
+                    panel.style.filter = `brightness(${Math.max(0.75, 0.96 - Math.abs(distance) * 0.05)})`;
+                    panel.style.zIndex = String(20 - Math.min(Math.abs(distance), 15));
+
+                    if (isOddFold) {
+                        shade.style.background = 'linear-gradient(to right, rgba(0,0,0,0.26) 0%, rgba(0,0,0,0.08) 60%, rgba(255,255,255,0.15) 100%)';
+                    } else {
+                        shade.style.background = 'linear-gradient(to left, rgba(0,0,0,0.24) 0%, rgba(255,255,255,0.28) 70%, rgba(0,0,0,0.05) 100%)';
+                    }
+                    img.style.opacity = '0.9';
+                }
+            });
+
+            const translateX = (stageWidth / 2) - offsetToActiveCenter;
+            track.style.transform = `translateX(${translateX}px)`;
+
+            const dotsContainer = document.getElementById('flipbook-dots');
+            dotsContainer.innerHTML = '';
+            for (let i = 0; i < total; i++) {
+                const dot = document.createElement('button');
+                dot.className = `h-1.5 transition-all interactive-el ${i === activeFoldIndex ? 'w-6 bg-white' : 'w-2 bg-white/30 hover:bg-white/60'}`;
+                dot.onclick = () => {
+                    activeFoldIndex = i;
+                    updateAccordionLayout();
+                };
+                dotsContainer.appendChild(dot);
+            }
+        }
+
+        function flipNext() {
+            const total = flipbookCollections[currentBookKey].pages.length;
+            if (activeFoldIndex + 1 < total) {
+                activeFoldIndex += 1;
+                updateAccordionLayout();
+            }
+        }
+
+        function flipPrev() {
+            if (activeFoldIndex - 1 >= 0) {
+                activeFoldIndex -= 1;
+                updateAccordionLayout();
+            }
+        }
+
+        // 手势与鼠标拖拽切换折页
+        const accordionStage = document.getElementById('accordion-stage');
+        let accordionDragStartX = 0;
+        let isAccordionDragging = false;
+
+        accordionStage.addEventListener('touchstart', (e) => {
+            accordionDragStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        accordionStage.addEventListener('touchend', (e) => {
+            const diff = e.changedTouches[0].clientX - accordionDragStartX;
+            if (Math.abs(diff) > 40) {
+                if (diff < 0) flipNext();
+                else flipPrev();
+            }
+        });
+
+        accordionStage.addEventListener('mousedown', (e) => {
+            isAccordionDragging = true;
+            accordionDragStartX = e.clientX;
+        });
+
+        accordionStage.addEventListener('mouseup', (e) => {
+            if (!isAccordionDragging) return;
+            isAccordionDragging = false;
+            const diff = e.clientX - accordionDragStartX;
+            if (Math.abs(diff) > 40) {
+                if (diff < 0) flipNext();
+                else flipPrev();
+            }
+        });
+
+        accordionStage.addEventListener('mouseleave', () => {
+            isAccordionDragging = false;
+        });
+
+        // 全局键盘快捷键支持（方向键翻页 + Esc 逐层关闭弹窗）
+        document.addEventListener('keydown', (e) => {
+            const resumeModal = document.getElementById('resume-preview-modal');
+            const flipModal = document.getElementById('flipbook-modal');
+            const lightboxModal = document.getElementById('lightbox-modal');
+            const detailModal = document.getElementById('detail-modal');
+
+            if (e.key === 'Escape') {
+                if (resumeModal.classList.contains('opacity-100')) {
+                    closeResumeModal();
+                } else if (flipModal.classList.contains('opacity-100')) {
+                    closeFlipbook();
+                } else if (lightboxModal.classList.contains('opacity-100')) {
+                    closeLightbox();
+                } else if (detailModal.classList.contains('active')) {
+                    closeDetail();
+                }
+                return;
+            }
+
+            if (flipModal.classList.contains('opacity-100')) {
+                if (e.key === 'ArrowRight') flipNext();
+                else if (e.key === 'ArrowLeft') flipPrev();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            const flipModal = document.getElementById('flipbook-modal');
+            if (flipModal.classList.contains('opacity-100')) {
+                updateAccordionLayout();
+            }
+        });
+    </script>
+</body>
+</html>
